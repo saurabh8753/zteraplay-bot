@@ -23,9 +23,11 @@ app.post("/", async (req, res) => {
     const chatId = msg.chat.id;
     const text = (msg.text || "").trim();
 
+    // Accept any video link
     if (/^https?:\/\//i.test(text)) {
       const origin = getOrigin(req);
       const watchUrl = `${origin}/watch?url=${encodeURIComponent(text)}`;
+
       await fetch(`${TG_API}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -47,7 +49,7 @@ app.post("/", async (req, res) => {
 // Home route
 app.get("/", (_, res) => res.send("ZTeraPlay Bot is Running 🚀"));
 
-// /watch → fullscreen player + auto Chrome redirect + loading animation + ads
+// /watch → direct fullscreen player + auto Chrome redirect + ads
 app.get("/watch", (req, res) => {
   const link = req.query.url || "";
   if (!link) return res.status(400).send("<h3>❌ Missing video URL.</h3>");
@@ -61,91 +63,28 @@ app.get("/watch", (req, res) => {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ZTeraPlay Video Player</title>
 <style>
-  body {
-    margin: 0; padding: 0;
-    background: #000;
-    color: #fff;
-    font-family: 'Poppins', sans-serif;
-    overflow: hidden;
-  }
-  .loader {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: #000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    z-index: 1000;
-  }
-  .spinner {
-    width: 60px;
-    height: 60px;
-    border: 6px solid rgba(255,255,255,0.2);
-    border-top-color: #10b981;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text {
-    margin-top: 20px;
-    font-size: 18px;
-    color: #10b981;
-    letter-spacing: 1px;
-  }
-  .video-container {
-    position: relative;
-    width: 100%;
-    height: 100vh;
-    display: none;
-  }
-  iframe {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%;
-    height: 100%;
-    border: none;
-  }
-  .ads { margin: 10px auto; background:#000; text-align:center; display:none; }
+  body { margin: 0; padding: 0; background: #000; color:#fff; text-align:center; font-family:sans-serif; }
+  .video-container { position: relative; width: 100%; height: 100vh; overflow: hidden; }
+  iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+  .ads { margin: 10px auto; background:#000; }
 </style>
 
 <script>
-  // Telegram Chrome redirect detection
+  // Detect Telegram in-app browser & redirect to Chrome
   const ua = navigator.userAgent || navigator.vendor || window.opera;
   const isAndroid = /Android/i.test(ua);
   const isTelegram = /Telegram/i.test(ua);
   const isChrome = /Chrome/i.test(ua);
 
-  window.onload = () => {
-    const loader = document.querySelector('.loader');
-    const player = document.querySelector('.video-container');
-    const ads = document.querySelector('.ads');
-
-    // After 2 seconds, show player
-    setTimeout(() => {
-      loader.style.display = 'none';
-      player.style.display = 'block';
-      ads.style.display = 'block';
-    }, 2000);
-
-    // Telegram in-app browser redirect to Chrome
-    if (isAndroid && isTelegram && !isChrome) {
-      const intentUrl = 'intent://' + window.location.host + window.location.pathname + window.location.search +
-        '#Intent;scheme=https;package=com.android.chrome;end';
-      setTimeout(() => {
-        window.location.href = intentUrl;
-      }, 1000);
-    }
-  };
+  if (isAndroid && isTelegram && !isChrome) {
+    // Intent URL to force open in Chrome
+    const intentUrl = 'intent://' + window.location.host + window.location.pathname + window.location.search +
+      '#Intent;scheme=https;package=com.android.chrome;end';
+    window.location.href = intentUrl;
+  }
 </script>
 </head>
 <body>
-  <div class="loader">
-    <div class="spinner"></div>
-    <div class="loading-text">🎬 Loading your video...</div>
-  </div>
-
   <div class="video-container">
     <iframe
       src="${iframeSrc}"
@@ -166,6 +105,4 @@ app.get("/watch", (req, res) => {
   res.send(html);
 });
 
-app.listen(3000, () =>
-  console.log("ZTeraPlay Bot running (Auto Chrome + Loading Animation) 🚀")
-);
+app.listen(3000, () => console.log("ZTeraPlay Bot running (Direct + Auto Chrome Redirect) 🚀"));
