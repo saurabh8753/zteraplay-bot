@@ -30,7 +30,7 @@ app.post("/", async (req, res) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: chatId,
-          text: "🎬 *Welcome to ZteraPlay Bot!*\n\nSend me any Terabox link to get a playable video link.",
+          text: "🎬 *Welcome to Terafetch Bot!*\n\nSend me any Terabox link to get a playable video link.",
           parse_mode: "Markdown",
         }),
       });
@@ -47,7 +47,7 @@ app.post("/", async (req, res) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: chatId,
-          text: `🎬 *Your video player is ready!*\n\n▶️ ${watchUrl}\n\nIf video doesn’t play, open in Chrome browser.`,
+          text: `🎬 *Your video player is ready!*\n\n▶️ ${watchUrl}\n\nTurn ON your mobile auto rotate mod and open link in Chrome browser for watch video full screen.`,
           parse_mode: "Markdown",
         }),
       });
