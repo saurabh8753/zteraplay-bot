@@ -1,5 +1,4 @@
 import express from "express";
-import fs from "fs";
 
 const app = express();
 app.use(express.json());
@@ -7,24 +6,6 @@ app.use(express.json());
 // Telegram Bot Token
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const TG_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
-
-// File to store stats
-const STATS_FILE = "./stats.json";
-
-// Load stats or create new
-let stats = { users: [], videos: 0 };
-if (fs.existsSync(STATS_FILE)) {
-  try {
-    stats = JSON.parse(fs.readFileSync(STATS_FILE, "utf8"));
-  } catch {
-    stats = { users: [], videos: 0 };
-  }
-}
-
-// Helper: save stats to file
-function saveStats() {
-  fs.writeFileSync(STATS_FILE, JSON.stringify(stats, null, 2));
-}
 
 // Helper: get base URL dynamically
 function getOrigin(req) {
@@ -40,16 +21,10 @@ app.post("/", async (req, res) => {
     if (!msg) return res.sendStatus(200);
 
     const chatId = msg.chat.id;
-    const userId = msg.from.id;
     const text = (msg.text || "").trim();
 
-    // 🟢 /start — Welcome message
+    // 🟢 Step 1: Handle /start command
     if (text === "/start") {
-      if (!stats.users.includes(userId)) {
-        stats.users.push(userId);
-        saveStats();
-      }
-
       await fetch(`${TG_API}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -62,34 +37,10 @@ app.post("/", async (req, res) => {
       return res.sendStatus(200);
     }
 
-    // 🧾 /stats — show bot usage
-    if (text === "/stats") {
-      const userCount = stats.users.length;
-      const videoCount = stats.videos;
-
-      await fetch(`${TG_API}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: `📊 *ZteraPlay Bot Stats:*\n\n👥 Total Users: *${userCount}*\n🎥 Videos Played: *${videoCount}*`,
-          parse_mode: "Markdown",
-        }),
-      });
-      return res.sendStatus(200);
-    }
-
-    // 🎬 Handle valid video links
+    // 🟢 Step 2: Handle any valid link
     if (/^https?:\/\//i.test(text)) {
       const origin = getOrigin(req);
       const watchUrl = `${origin}/watch?url=${encodeURIComponent(text)}`;
-
-      // Count usage
-      if (!stats.users.includes(userId)) {
-        stats.users.push(userId);
-      }
-      stats.videos++;
-      saveStats();
 
       await fetch(`${TG_API}/sendMessage`, {
         method: "POST",
@@ -101,6 +52,7 @@ app.post("/", async (req, res) => {
         }),
       });
     } else {
+      // 🟡 Optional: invalid message response
       await fetch(`${TG_API}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -121,14 +73,12 @@ app.post("/", async (req, res) => {
 // Home route
 app.get("/", (_, res) => res.send("ZteraPlay Bot is Running 🚀"));
 
-// /watch → fullscreen player + auto Chrome redirect + ads
+// /watch → fullscreen player + auto Chrome redirect + ads (no loader)
 app.get("/watch", (req, res) => {
   const link = req.query.url || "";
   if (!link) return res.status(400).send("<h3>❌ Missing video URL.</h3>");
 
-  const iframeSrc = `https://iteraplay.com/api/play.php?url=${encodeURIComponent(
-    link
-  )}&key=iTeraPlay2025&autoplay=1`;
+  const iframeSrc = `https://iteraplay.com/api/play.php?url=${encodeURIComponent(link)}&key=iTeraPlay2025&autoplay=1`;
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -199,5 +149,5 @@ app.get("/watch", (req, res) => {
 });
 
 app.listen(3000, () =>
-  console.log("ZteraPlay Bot running (with /stats feature) 🚀")
+  console.log("ZteraPlay Bot running (No Loader + Auto Chrome Redirect) 🚀")
 );
