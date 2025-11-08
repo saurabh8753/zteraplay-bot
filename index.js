@@ -23,7 +23,7 @@ app.post("/", async (req, res) => {
     const chatId = msg.chat.id;
     const text = (msg.text || "").trim();
 
-    // 🟢 Step 1: Handle /start command
+    // 🟢 /start — Welcome message
     if (text === "/start") {
       await fetch(`${TG_API}/sendMessage`, {
         method: "POST",
@@ -37,7 +37,7 @@ app.post("/", async (req, res) => {
       return res.sendStatus(200);
     }
 
-    // 🟢 Step 2: Handle any valid link
+    // 🎬 Handle valid video links
     if (/^https?:\/\//i.test(text)) {
       const origin = getOrigin(req);
       const watchUrl = `${origin}/watch?url=${encodeURIComponent(text)}`;
@@ -52,7 +52,7 @@ app.post("/", async (req, res) => {
         }),
       });
     } else {
-      // 🟡 Optional: invalid message response
+      // ⚠️ Invalid message response
       await fetch(`${TG_API}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -73,12 +73,14 @@ app.post("/", async (req, res) => {
 // Home route
 app.get("/", (_, res) => res.send("ZteraPlay Bot is Running 🚀"));
 
-// /watch → fullscreen player + auto Chrome redirect + ads (no loader)
+// /watch → fullscreen player + auto Chrome redirect + ads
 app.get("/watch", (req, res) => {
   const link = req.query.url || "";
   if (!link) return res.status(400).send("<h3>❌ Missing video URL.</h3>");
 
-  const iframeSrc = `https://iteraplay.com/api/play.php?url=${encodeURIComponent(link)}&key=iTeraPlay2025&autoplay=1`;
+  const iframeSrc = `https://iteraplay.com/api/play.php?url=${encodeURIComponent(
+    link
+  )}&key=iTeraPlay2025&autoplay=1`;
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -149,5 +151,5 @@ app.get("/watch", (req, res) => {
 });
 
 app.listen(3000, () =>
-  console.log("ZteraPlay Bot running (No Loader + Auto Chrome Redirect) 🚀")
+  console.log("ZteraPlay Bot running (Simple + Auto Chrome Redirect) 🚀")
 );
