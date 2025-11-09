@@ -100,7 +100,7 @@ app.post("/", async (req, res) => {
 // Home route
 app.get("/", (_, res) => res.send("ZteraPlay Bot is Running 🚀"));
 
-// Watch route → video + ads below (fixed layout)
+// Watch route → fullscreen video + single EffectiveGate ad below
 app.get("/watch", (req, res) => {
   const link = req.query.url || "";
   if (!link) return res.status(400).send("<h3>❌ Missing video URL.</h3>");
@@ -144,14 +144,13 @@ app.get("/watch", (req, res) => {
 
   .ads-container {
     width: 100%;
-    min-height: 250px;
+    min-height: 120px;
     background: #000;
     margin-top: 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 10px;
     padding-bottom: 10px;
   }
 </style>
@@ -169,37 +168,17 @@ app.get("/watch", (req, res) => {
     window.location.href = intentUrl;
   }
 
-  // Load ads after page load
+  // Load EffectiveGateCPM ad after page load
   window.onload = () => {
-    // EffectiveGateCPM ad
-    const egScript = document.createElement("script");
-    egScript.async = true;
-    egScript.setAttribute("data-cfasync", "false");
-    egScript.src = "//pl28014789.effectivegatecpm.com/b4b685eed4a6d70ed726583fa0513943/invoke.js";
-    document.getElementById("ads").appendChild(egScript);
-
-    const egDiv = document.createElement("div");
-    egDiv.id = "container-b4b685eed4a6d70ed726583fa0513943";
-    document.getElementById("ads").appendChild(egDiv);
-
-    // HighPerformanceFormat ad
     const adScript = document.createElement("script");
-    adScript.type = "text/javascript";
-    adScript.innerHTML = \`
-      atOptions = {
-        'key': 'efd9f445630da87b9579d88212b3b8e3',
-        'format': 'iframe',
-        'height': 250,
-        'width': 300,
-        'params': {}
-      };
-    \`;
-    const srcScript = document.createElement("script");
-    srcScript.src = "//www.highperformanceformat.com/efd9f445630da87b9579d88212b3b8e3/invoke.js";
-    srcScript.async = true;
-    srcScript.type = "text/javascript";
+    adScript.async = true;
+    adScript.setAttribute("data-cfasync", "false");
+    adScript.src = "//pl28014789.effectivegatecpm.com/b4b685eed4a6d70ed726583fa0513943/invoke.js";
     document.getElementById("ads").appendChild(adScript);
-    document.getElementById("ads").appendChild(srcScript);
+
+    const adDiv = document.createElement("div");
+    adDiv.id = "container-b4b685eed4a6d70ed726583fa0513943";
+    document.getElementById("ads").appendChild(adDiv);
   };
 </script>
 </head>
@@ -224,5 +203,5 @@ app.get("/watch", (req, res) => {
 });
 
 app.listen(3000, () =>
-  console.log("ZteraPlay Bot running (Auto Delete + Dual Ads + Chrome Redirect) 🚀")
+  console.log("ZteraPlay Bot running (Auto Delete + Chrome Redirect + EffectiveGate Ad) 🚀")
 );
