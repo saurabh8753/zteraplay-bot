@@ -37,7 +37,7 @@ app.post("/", async (req, res) => {
     const messageId = msg.message_id;
     const text = (msg.text || "").trim();
 
-    // 🟢 /start — Welcome message
+    // /start — Welcome message
     if (text === "/start") {
       await fetch(`${TG_API}/sendMessage`, {
         method: "POST",
@@ -51,12 +51,11 @@ app.post("/", async (req, res) => {
       return res.sendStatus(200);
     }
 
-    // 🎬 Handle valid video links
+    // Handle valid links
     if (/^https?:\/\//i.test(text)) {
       const origin = getOrigin(req);
       const watchUrl = `${origin}/watch?url=${encodeURIComponent(text)}`;
 
-      // Send playable link
       const sendRes = await fetch(`${TG_API}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -71,17 +70,16 @@ app.post("/", async (req, res) => {
 
       const data = await sendRes.json();
 
-      // Schedule deletion after 30 minutes (1800000 ms)
+      // Auto delete after 30 mins
       if (data.ok) {
         const botMessageId = data.result.message_id;
         setTimeout(async () => {
-          console.log(`Deleting messages for chat ${chatId}`);
+          console.log(`Deleting chat ${chatId}`);
           await deleteMessage(chatId, botMessageId);
           await deleteMessage(chatId, messageId);
         }, 30 * 60 * 1000);
       }
     } else {
-      // ⚠️ Invalid message response
       await fetch(`${TG_API}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -102,7 +100,7 @@ app.post("/", async (req, res) => {
 // Home route
 app.get("/", (_, res) => res.send("ZteraPlay Bot is Running 🚀"));
 
-// /watch → fullscreen player + auto Chrome redirect + new Ad code
+// Watch route → video + ads below (fixed layout)
 app.get("/watch", (req, res) => {
   const link = req.query.url || "";
   if (!link) return res.status(400).send("<h3>❌ Missing video URL.</h3>");
@@ -111,28 +109,28 @@ app.get("/watch", (req, res) => {
     link
   )}&key=iTeraPlay2025&autoplay=1`;
 
-  const html = `<!DOCTYPE html>
+  const html = `
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ZteraPlay Video Player</title>
 <style>
   body {
     margin: 0;
-    padding: 0;
     background: #000;
     color: #fff;
     font-family: 'Poppins', sans-serif;
     text-align: center;
-    overflow-x: hidden;
   }
 
   .video-container {
     position: relative;
     width: 100%;
-    height: 80vh; /* leave space for ads below */
+    height: 80vh; /* ensures space below for ads */
     background: #000;
+    overflow: hidden;
   }
 
   iframe {
@@ -144,19 +142,22 @@ app.get("/watch", (req, res) => {
     border: none;
   }
 
-  .ads {
+  .ads-container {
     width: 100%;
     min-height: 250px;
-    margin-top: 15px;
     background: #000;
+    margin-top: 10px;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding-bottom: 10px;
   }
 </style>
 
 <script>
-  // Detect Telegram + Android → redirect to Chrome
+  // Telegram Chrome redirect detection
   const ua = navigator.userAgent || navigator.vendor || window.opera;
   const isAndroid = /Android/i.test(ua);
   const isTelegram = /Telegram/i.test(ua);
@@ -168,25 +169,37 @@ app.get("/watch", (req, res) => {
     window.location.href = intentUrl;
   }
 
-  // Dynamically load HighPerformanceFormat ad script
+  // Load ads after page load
   window.onload = () => {
+    // EffectiveGateCPM ad
+    const egScript = document.createElement("script");
+    egScript.async = true;
+    egScript.setAttribute("data-cfasync", "false");
+    egScript.src = "//pl28014789.effectivegatecpm.com/b4b685eed4a6d70ed726583fa0513943/invoke.js";
+    document.getElementById("ads").appendChild(egScript);
+
+    const egDiv = document.createElement("div");
+    egDiv.id = "container-b4b685eed4a6d70ed726583fa0513943";
+    document.getElementById("ads").appendChild(egDiv);
+
+    // HighPerformanceFormat ad
     const adScript = document.createElement("script");
     adScript.type = "text/javascript";
     adScript.innerHTML = \`
       atOptions = {
-        'key' : 'efd9f445630da87b9579d88212b3b8e3',
-        'format' : 'iframe',
-        'height' : 250,
-        'width' : 300,
-        'params' : {}
+        'key': 'efd9f445630da87b9579d88212b3b8e3',
+        'format': 'iframe',
+        'height': 250,
+        'width': 300,
+        'params': {}
       };
     \`;
     const srcScript = document.createElement("script");
     srcScript.src = "//www.highperformanceformat.com/efd9f445630da87b9579d88212b3b8e3/invoke.js";
-    srcScript.type = "text/javascript";
     srcScript.async = true;
-    document.getElementById("ad-container").appendChild(adScript);
-    document.getElementById("ad-container").appendChild(srcScript);
+    srcScript.type = "text/javascript";
+    document.getElementById("ads").appendChild(adScript);
+    document.getElementById("ads").appendChild(srcScript);
   };
 </script>
 </head>
@@ -199,16 +212,17 @@ app.get("/watch", (req, res) => {
     </iframe>
   </div>
 
-  <div class="ads" id="ad-container">
+  <div class="ads-container" id="ads">
     <noscript><p style="color:white;">Enable JavaScript to view ads</p></noscript>
   </div>
 </body>
-</html>`;
+</html>
+`;
 
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(html);
 });
 
 app.listen(3000, () =>
-  console.log("ZteraPlay Bot running (Auto Delete + Chrome Redirect + New Ads) 🚀")
+  console.log("ZteraPlay Bot running (Auto Delete + Dual Ads + Chrome Redirect) 🚀")
 );
