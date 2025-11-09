@@ -14,6 +14,19 @@ function getOrigin(req) {
   return `${proto}://${host}`;
 }
 
+// Helper: delete message
+async function deleteMessage(chatId, messageId) {
+  try {
+    await fetch(`${TG_API}/deleteMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, message_id: messageId }),
+    });
+  } catch (err) {
+    console.error("Delete message error:", err);
+  }
+}
+
 // Telegram Webhook
 app.post("/", async (req, res) => {
   try {
@@ -21,6 +34,7 @@ app.post("/", async (req, res) => {
     if (!msg) return res.sendStatus(200);
 
     const chatId = msg.chat.id;
+    const messageId = msg.message_id;
     const text = (msg.text || "").trim();
 
     // 🟢 /start — Welcome message
@@ -42,15 +56,30 @@ app.post("/", async (req, res) => {
       const origin = getOrigin(req);
       const watchUrl = `${origin}/watch?url=${encodeURIComponent(text)}`;
 
-      await fetch(`${TG_API}/sendMessage`, {
+      // Send playable link
+      const sendRes = await fetch(`${TG_API}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: chatId,
-          text: `🎬 *Your video player is ready!*\n\n▶️ ${watchUrl}\n\nIf the video doesn’t play, open in Chrome browser.`,
+          text:
+            `🎬 *Your video player is ready!*\n\n▶️ ${watchUrl}\n\n` +
+            `⚠️ _This message will be deleted after 30 minutes._\nPlease forward or save this message.`,
           parse_mode: "Markdown",
         }),
       });
+
+      const data = await sendRes.json();
+
+      // Schedule deletion after 30 minutes (1800000 ms)
+      if (data.ok) {
+        const botMessageId = data.result.message_id;
+        setTimeout(async () => {
+          console.log(`Deleting messages for chat ${chatId}`);
+          await deleteMessage(chatId, botMessageId);
+          await deleteMessage(chatId, messageId);
+        }, 30 * 60 * 1000);
+      }
     } else {
       // ⚠️ Invalid message response
       await fetch(`${TG_API}/sendMessage`, {
@@ -169,5 +198,5 @@ app.get("/watch", (req, res) => {
 });
 
 app.listen(3000, () =>
-  console.log("ZteraPlay Bot running (with working ads + Chrome redirect) 🚀")
+  console.log("ZteraPlay Bot running (Auto Delete + Ads + Chrome Redirect) 🚀")
 );
