@@ -47,7 +47,7 @@ app.post("/", async (req, res) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: chatId,
-          text: `🎬 *Your video player is ready!*\n\n▶️ ${watchUrl}\n\nIf video doesn’t play, open in Chrome browser.`,
+          text: `🎬 *Your video player is ready!*\n\n▶️ ${watchUrl}\n\nIf the video doesn’t play, open in Chrome browser.`,
           parse_mode: "Markdown",
         }),
       });
@@ -73,7 +73,7 @@ app.post("/", async (req, res) => {
 // Home route
 app.get("/", (_, res) => res.send("ZteraPlay Bot is Running 🚀"));
 
-// /watch → fullscreen player + auto Chrome redirect + ads
+// /watch → fullscreen player + auto Chrome redirect + working Adsterra ads
 app.get("/watch", (req, res) => {
   const link = req.query.url || "";
   if (!link) return res.status(400).send("<h3>❌ Missing video URL.</h3>");
@@ -95,27 +95,39 @@ app.get("/watch", (req, res) => {
     background: #000;
     color: #fff;
     font-family: 'Poppins', sans-serif;
-    overflow: hidden;
     text-align: center;
+    overflow-x: hidden;
   }
+
   .video-container {
     position: relative;
     width: 100%;
-    height: 100vh;
-    overflow: hidden;
+    height: 80vh; /* leave space for ads below */
+    background: #000;
   }
+
   iframe {
     position: absolute;
-    top: 0; left: 0;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     border: none;
   }
-  .ads { margin: 10px auto; background:#000; text-align:center; }
+
+  .ads {
+    width: 100%;
+    min-height: 120px;
+    margin-top: 15px;
+    background: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
 </style>
 
 <script>
-  // Telegram Chrome redirect detection
+  // Detect Telegram + Android → redirect to Chrome
   const ua = navigator.userAgent || navigator.vendor || window.opera;
   const isAndroid = /Android/i.test(ua);
   const isTelegram = /Telegram/i.test(ua);
@@ -126,6 +138,15 @@ app.get("/watch", (req, res) => {
       '#Intent;scheme=https;package=com.android.chrome;end';
     window.location.href = intentUrl;
   }
+
+  // Dynamically load Adsterra after DOM ready
+  window.onload = () => {
+    const script = document.createElement("script");
+    script.src = "//pl27689834.revenuecpmgate.com/1aad6323fe767e376fc42dfa8fec01a3/invoke.js";
+    script.async = true;
+    script.setAttribute("data-cfasync", "false");
+    document.getElementById("ad-container").appendChild(script);
+  };
 </script>
 </head>
 <body>
@@ -137,10 +158,8 @@ app.get("/watch", (req, res) => {
     </iframe>
   </div>
 
-  <div class="ads">
-    <!-- 🔥 Adsterra Ad below video -->
-<script async="async" data-cfasync="false" src="//pl28014789.effectivegatecpm.com/b4b685eed4a6d70ed726583fa0513943/invoke.js"></script>
-<div id="container-b4b685eed4a6d70ed726583fa0513943"></div>
+  <div class="ads" id="ad-container">
+    <noscript><p style="color:white;">Enable JavaScript to view ads</p></noscript>
   </div>
 </body>
 </html>`;
@@ -150,5 +169,5 @@ app.get("/watch", (req, res) => {
 });
 
 app.listen(3000, () =>
-  console.log("ZteraPlay Bot running (Simple + Auto Chrome Redirect) 🚀")
+  console.log("ZteraPlay Bot running (with working ads + Chrome redirect) 🚀")
 );
