@@ -14,19 +14,6 @@ function getOrigin(req) {
   return `${proto}://${host}`;
 }
 
-// Helper: delete message
-async function deleteMessage(chatId, messageId) {
-  try {
-    await fetch(`${TG_API}/deleteMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, message_id: messageId }),
-    });
-  } catch (err) {
-    console.error("Delete message error:", err);
-  }
-}
-
 // Telegram Webhook
 app.post("/", async (req, res) => {
   try {
@@ -34,10 +21,9 @@ app.post("/", async (req, res) => {
     if (!msg) return res.sendStatus(200);
 
     const chatId = msg.chat.id;
-    const messageId = msg.message_id;
     const text = (msg.text || "").trim();
 
-    // /start — Welcome message
+    // 🟢 /start — Welcome message
     if (text === "/start") {
       await fetch(`${TG_API}/sendMessage`, {
         method: "POST",
@@ -51,35 +37,22 @@ app.post("/", async (req, res) => {
       return res.sendStatus(200);
     }
 
-    // Handle valid links
+    // 🎬 Handle valid video links
     if (/^https?:\/\//i.test(text)) {
       const origin = getOrigin(req);
       const watchUrl = `${origin}/watch?url=${encodeURIComponent(text)}`;
 
-      const sendRes = await fetch(`${TG_API}/sendMessage`, {
+      await fetch(`${TG_API}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: chatId,
-          text:
-            `🎬 *Your video player is ready!*\n\n▶️ ${watchUrl}\n\n` +
-            `⚠️ _This message will be deleted after 30 minutes._\nPlease forward or save this message.`,
+          text: `🎬 *Your video player is ready!*\n\n▶️ ${watchUrl}\n\nIf the video doesn’t play, open it in Chrome browser.`,
           parse_mode: "Markdown",
         }),
       });
-
-      const data = await sendRes.json();
-
-      // Auto delete after 30 mins
-      if (data.ok) {
-        const botMessageId = data.result.message_id;
-        setTimeout(async () => {
-          console.log(`Deleting chat ${chatId}`);
-          await deleteMessage(chatId, botMessageId);
-          await deleteMessage(chatId, messageId);
-        }, 30 * 60 * 1000);
-      }
     } else {
+      // ⚠️ Invalid message
       await fetch(`${TG_API}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -100,7 +73,7 @@ app.post("/", async (req, res) => {
 // Home route
 app.get("/", (_, res) => res.send("ZteraPlay Bot is Running 🚀"));
 
-// Watch route → fullscreen video + single EffectiveGate ad below
+// /watch → video + EffectiveGate ad below
 app.get("/watch", (req, res) => {
   const link = req.query.url || "";
   if (!link) return res.status(400).send("<h3>❌ Missing video URL.</h3>");
@@ -128,42 +101,40 @@ app.get("/watch", (req, res) => {
   .video-container {
     position: relative;
     width: 100%;
-    height: 80vh; /* ensures space below for ads */
+    height: 80vh; /* leave space below for ad */
     background: #000;
     overflow: hidden;
   }
 
   iframe {
     position: absolute;
-    top: 0;
-    left: 0;
+    top: 0; left: 0;
     width: 100%;
     height: 100%;
     border: none;
   }
 
-  .ads-container {
+  .ads {
     width: 100%;
     min-height: 120px;
     background: #000;
-    margin-top: 10px;
+    margin-top: 15px;
     display: flex;
-    flex-direction: column;
-    align-items: center;
     justify-content: center;
-    padding-bottom: 10px;
+    align-items: center;
   }
 </style>
 
 <script>
-  // Telegram Chrome redirect detection
+  // Redirect Telegram Android users to Chrome
   const ua = navigator.userAgent || navigator.vendor || window.opera;
   const isAndroid = /Android/i.test(ua);
   const isTelegram = /Telegram/i.test(ua);
   const isChrome = /Chrome/i.test(ua);
 
   if (isAndroid && isTelegram && !isChrome) {
-    const intentUrl = 'intent://' + window.location.host + window.location.pathname + window.location.search +
+    const intentUrl =
+      'intent://' + window.location.host + window.location.pathname + window.location.search +
       '#Intent;scheme=https;package=com.android.chrome;end';
     window.location.href = intentUrl;
   }
@@ -174,11 +145,11 @@ app.get("/watch", (req, res) => {
     adScript.async = true;
     adScript.setAttribute("data-cfasync", "false");
     adScript.src = "//pl28014789.effectivegatecpm.com/b4b685eed4a6d70ed726583fa0513943/invoke.js";
-    document.getElementById("ads").appendChild(adScript);
+    document.getElementById("ad-zone").appendChild(adScript);
 
     const adDiv = document.createElement("div");
     adDiv.id = "container-b4b685eed4a6d70ed726583fa0513943";
-    document.getElementById("ads").appendChild(adDiv);
+    document.getElementById("ad-zone").appendChild(adDiv);
   };
 </script>
 </head>
@@ -191,17 +162,15 @@ app.get("/watch", (req, res) => {
     </iframe>
   </div>
 
-  <div class="ads-container" id="ads">
+  <div class="ads" id="ad-zone">
     <noscript><p style="color:white;">Enable JavaScript to view ads</p></noscript>
   </div>
 </body>
-</html>
-`;
-
+</html>`;
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(html);
 });
 
 app.listen(3000, () =>
-  console.log("ZteraPlay Bot running (Auto Delete + Chrome Redirect + EffectiveGate Ad) 🚀")
+  console.log("ZteraPlay Bot running (No Auto Delete + Chrome Redirect + EffectiveGate Ad) 🚀")
 );
