@@ -102,7 +102,7 @@ app.post("/", async (req, res) => {
 // Home route
 app.get("/", (_, res) => res.send("ZteraPlay Bot is Running 🚀"));
 
-// /watch → fullscreen player + auto Chrome redirect + working Adsterra ads
+// /watch → fullscreen player + auto Chrome redirect + new Ad code
 app.get("/watch", (req, res) => {
   const link = req.query.url || "";
   if (!link) return res.status(400).send("<h3>❌ Missing video URL.</h3>");
@@ -146,7 +146,7 @@ app.get("/watch", (req, res) => {
 
   .ads {
     width: 100%;
-    min-height: 120px;
+    min-height: 250px;
     margin-top: 15px;
     background: #000;
     display: flex;
@@ -168,13 +168,25 @@ app.get("/watch", (req, res) => {
     window.location.href = intentUrl;
   }
 
-  // Dynamically load Adsterra after DOM ready
+  // Dynamically load HighPerformanceFormat ad script
   window.onload = () => {
-    const script = document.createElement("script");
-    script.src = "//pl27689834.revenuecpmgate.com/1aad6323fe767e376fc42dfa8fec01a3/invoke.js";
-    script.async = true;
-    script.setAttribute("data-cfasync", "false");
-    document.getElementById("ad-container").appendChild(script);
+    const adScript = document.createElement("script");
+    adScript.type = "text/javascript";
+    adScript.innerHTML = \`
+      atOptions = {
+        'key' : 'efd9f445630da87b9579d88212b3b8e3',
+        'format' : 'iframe',
+        'height' : 250,
+        'width' : 300,
+        'params' : {}
+      };
+    \`;
+    const srcScript = document.createElement("script");
+    srcScript.src = "//www.highperformanceformat.com/efd9f445630da87b9579d88212b3b8e3/invoke.js";
+    srcScript.type = "text/javascript";
+    srcScript.async = true;
+    document.getElementById("ad-container").appendChild(adScript);
+    document.getElementById("ad-container").appendChild(srcScript);
   };
 </script>
 </head>
@@ -198,5 +210,5 @@ app.get("/watch", (req, res) => {
 });
 
 app.listen(3000, () =>
-  console.log("ZteraPlay Bot running (Auto Delete + Ads + Chrome Redirect) 🚀")
+  console.log("ZteraPlay Bot running (Auto Delete + Chrome Redirect + New Ads) 🚀")
 );
