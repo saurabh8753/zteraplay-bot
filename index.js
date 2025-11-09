@@ -139,9 +139,8 @@ app.get("/watch", (req, res) => {
 
   <div class="ads">
     <!-- 🔥 Adsterra Ad below video -->
-    <script async="async" data-cfasync="false"
-      src="//pl27689834.revenuecpmgate.com/1aad6323fe767e376fc42dfa8fec01a3/invoke.js"></script>
-    <div id="container-1aad6323fe767e376fc42dfa8fec01a3"></div>
+<script async="async" data-cfasync="false" src="//pl28014789.effectivegatecpm.com/b4b685eed4a6d70ed726583fa0513943/invoke.js"></script>
+<div id="container-b4b685eed4a6d70ed726583fa0513943"></div>
   </div>
 </body>
 </html>`;
